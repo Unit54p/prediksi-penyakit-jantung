@@ -4,6 +4,11 @@ import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, roc_auc_score, roc_curve
+import seaborn as sns
+
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
@@ -65,15 +70,23 @@ x_train, x_val, y_train, y_val = train_test_split(
 # model.add(Dense(1, activation='sigmoid'))
 
 
-model = Sequential()
-model.add(Dense(64, activation='relu', input_shape=(x_train.shape[1],), kernel_regularizer=l2(0.001)))
-model.add(Dropout(0.3))  # Cegah overfitting
-model.add(Dense(32, activation='relu', kernel_regularizer=l2(0.001)))
-model.add(Dropout(0.3))
-model.add(Dense(16, activation='relu', kernel_regularizer=l2(0.001)))
-model.add(Dense(1, activation='sigmoid'))
+# model = Sequential()
+# model.add(Dense(64, activation='relu', input_shape=(x_train.shape[1],), kernel_regularizer=l2(0.001)))
+# model.add(Dropout(0.3))  # Cegah overfitting
+# model.add(Dense(32, activation='relu', kernel_regularizer=l2(0.001)))
+# model.add(Dropout(0.3))
+# model.add(Dense(16, activation='relu', kernel_regularizer=l2(0.001)))
+# model.add(Dense(1, activation='sigmoid'))
 
-early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+model = Sequential([
+    Dense(64, input_shape=(x_train.shape[1],), activation='relu', kernel_regularizer=l2(0.001)),
+    Dropout(0.3),
+    Dense(32, activation='relu', kernel_regularizer=l2(0.001)),
+    Dropout(0.3),
+    Dense(1, activation='sigmoid')
+])
+
+early_stop = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 model.compile(optimizer = 'adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 history = model.fit(
@@ -84,6 +97,35 @@ history = model.fit(
 )
 loss, accuracy = model.evaluate(x_test, y_test)
 print(f'akurasi: {accuracy * 100:.2f}%')
+
+# Prediksi probabilitas dan konversi ke kelas
+y_pred_prob = model.predict(x_test)
+y_pred = (y_pred_prob > 0.5).astype("int32")
+
+cm = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Tidak', 'Ya'], yticklabels=['Tidak', 'Ya'])
+plt.xlabel('Prediksi')
+plt.ylabel('Aktual')
+plt.title('Confusion Matrix')
+plt.show()
+
+print("Akurasi :", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=['Tidak', 'Ya']))
+
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+auc = roc_auc_score(y_test, y_pred_prob)
+
+plt.figure(figsize=(6, 4))
+plt.plot(fpr, tpr, label=f'AUC = {auc:.2f}')
+plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.legend()
+plt.grid(True)
+plt.show()
 
 plt.plot(history.history['loss'], label='Training Loss')
 plt.plot(history.history['val_loss'], label='Validation Loss')
@@ -100,3 +142,4 @@ plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
 plt.show()
+
