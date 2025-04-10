@@ -48,12 +48,12 @@ x_scaled_df = pd.DataFrame(x_scaled, columns=x.columns)
 
 # Pertama, split data jadi train+val dan test
 x_train_full, x_test, y_train_full, y_test = train_test_split(
-    x_scaled, y, test_size=0.3, random_state=42
+    x_scaled, y, test_size=0.2, random_state=42
 )
 
 # Kedua, split lagi train_full jadi train dan val
 x_train, x_val, y_train, y_val = train_test_split(
-    x_train_full, y_train_full, test_size=0.3, random_state=42
+    x_train_full, y_train_full, test_size=0.2, random_state=42
 )
 
 
